@@ -1,0 +1,24 @@
+name: Seat Checker
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # 15分毎に自動チェック
+  workflow_dispatch:        # 手動実行ボタンを有効化
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install requests playwright
+          playwright install chromium
+      - name: Run script
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python main.py
