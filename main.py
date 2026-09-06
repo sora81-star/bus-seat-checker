@@ -19,29 +19,43 @@ def check_bus_seat():
 
         page_text = page.inner_text("body")
         
-        is_available = False
+        is_seat_available = False
+        is_extra_bus_found = False
 
         if TARGET_BUS_NAME in page_text:
             lines = page_text.split("\n")
             for i, line in enumerate(lines):
                 if TARGET_BUS_NAME in line:
-                    surrounding_text = " ".join(lines[max(0, i-2):min(len(lines), i+5)])
+                    # 該当便の前後テキストを抽出
+                    surrounding_text = " ".join(lines[max(0, i-2):min(len(lines), i+8)])
                     print(f"検出された対象便の情報: {surrounding_text}")
                     
-                    # 満席・受付終了以外の状態（○、△、空席、予約など）を検知
+                    # 1. 02号車（増便）のチェック
+                    if "02号車" in surrounding_text or "2号車" in surrounding_text:
+                        is_extra_bus_found = True
+
+                    # 2. 空席状況のチェック（満席・受付終了以外）
                     if any(mark in surrounding_text for mark in ["○", "△", "空席", "予約", "残り"]):
                         if "満席" not in surrounding_text and "受付終了" not in surrounding_text:
-                            is_available = True
+                            is_seat_available = True
                     break
 
         browser.close()
 
-        if is_available:
-            message = f"【空席検知！】\n発車オーライネット {TARGET_BUS_NAME}便に空席が出た可能性があります！\n\n予約サイトはこちら：\n{TARGET_URL}"
-            send_line_message(message)
-            print("空席を検知し、LINE通知を送信しました。")
+        # 通知メッセージの生成
+        messages = []
+        if is_extra_bus_found:
+            messages.append(f"【増便検知！】\n発車オーライネット {TARGET_BUS_NAME}便に「02号車」が追加された可能性があります！")
+        
+        if is_seat_available:
+            messages.append(f"【空席検知！】\n発車オーライネット {TARGET_BUS_NAME}便に空席が出た可能性があります！")
+
+        if messages:
+            full_message = "\n\n".join(messages) + f"\n\n予約サイトはこちら：\n{TARGET_URL}"
+            send_line_message(full_message)
+            print("検知成功：LINE通知を送信しました。")
         else:
-            print("現在は満席、または空席が確認できませんでした。")
+            print("現在は02号車の追加や空席は確認できませんでした。")
 
 def send_line_message(message):
     url = "https://api.line.me/v2/bot/message/push"
