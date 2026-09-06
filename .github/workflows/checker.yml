@@ -1,7 +1,7 @@
 name: Seat Checker
 on:
   schedule:
-    - cron: '*/15 * * * *'  # 15分毎に自動チェック
+    - cron: '1,31 * * * *'  # 15分毎に自動チェック
   workflow_dispatch:        # 手動実行ボタンを有効化
 
 jobs:
